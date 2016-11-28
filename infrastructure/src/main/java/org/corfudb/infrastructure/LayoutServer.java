@@ -7,6 +7,8 @@ import org.corfudb.protocols.wireprotocol.*;
 import org.corfudb.protocols.wireprotocol.CorfuMsgType;
 import org.corfudb.protocols.wireprotocol.CorfuMsg;
 import org.corfudb.protocols.wireprotocol.LayoutMsg;
+import org.corfudb.router.IServer;
+import org.corfudb.router.ServerMsgHandler;
 import org.corfudb.runtime.view.Layout;
 import org.corfudb.runtime.view.Layout.LayoutSegment;
 
@@ -51,7 +53,7 @@ import java.util.*;
 //TODO Finer grained synchronization needed for this class.
 //TODO Need a janitor to cleanup old phases data and to fill up holes in layout history.
 @Slf4j
-public class LayoutServer extends AbstractServer {
+public class LayoutServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     private static final String PREFIX_LAYOUT = "LAYOUT";
     private static final String KEY_LAYOUT = "CURRENT";
@@ -69,10 +71,12 @@ public class LayoutServer extends AbstractServer {
     @Getter
     private ServerContext serverContext;
 
-    /** Handler for this server */
+    /** Handler for the base server */
     @Getter
-    private CorfuMsgHandler handler = new CorfuMsgHandler()
-            .generateHandlers(MethodHandles.lookup(), this);
+    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
+            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+                    .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
+
 
     private int reboots = 0;
 
@@ -94,8 +98,6 @@ public class LayoutServer extends AbstractServer {
     /**
      * Reset the server, deleting persistent state on disk prior to rebooting.
      */
-
-    @Override
     public synchronized void reset() {
         String d = serverContext.getDataStore().getLogDir();
         if (d != null) {
@@ -160,7 +162,6 @@ public class LayoutServer extends AbstractServer {
     /**
      * Reboot the server, using persistent state on disk to restart.
      */
-    @Override
     public synchronized void reboot() {
         serverContext.resetDataStore();
 

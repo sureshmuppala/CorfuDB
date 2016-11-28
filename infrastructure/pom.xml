@@ -22,6 +22,11 @@
             <artifactId>format</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.corfudb</groupId>
+            <artifactId>router</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

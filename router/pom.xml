@@ -9,19 +9,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>runtime</artifactId>
+    <artifactId>router</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.corfudb</groupId>
-            <artifactId>format</artifactId>
+            <artifactId>test-infrastructure</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.corfudb</groupId>
-            <artifactId>router</artifactId>
-            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

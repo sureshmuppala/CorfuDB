@@ -2,19 +2,6 @@ package org.corfudb.infrastructure;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.corfudb.protocols.wireprotocol.NettyCorfuMessageDecoder;
@@ -27,8 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.fusesource.jansi.Ansi.Color.*;
 import static org.fusesource.jansi.Ansi.ansi;
@@ -170,96 +155,26 @@ public class CorfuServer {
 
         // Now, we start the Netty router, and have it route to the correct port.
         NettyServerRouter router = new NettyServerRouter(opts);
-
+        org.corfudb.router.netty.NettyServerRouter newRouter =
+                new org.corfudb.router.netty.NettyServerRouter<>((int)opts.get("<port>"),
+                        new NettyCorfuMessageDecoder(), new NettyCorfuMessageEncoder());
         // Create a common Server Context for all servers to access.
         ServerContext serverContext = new ServerContext(opts, router);
 
+        BaseServer bs = new BaseServer();
+        bs.setOptionsMap(opts);
+        newRouter.registerServer(bs);
         // Add each role to the router.
         sequencerServer = new SequencerServer(serverContext);
-        router.addServer(sequencerServer);
+        newRouter.registerServer(sequencerServer);
         layoutServer = new LayoutServer(serverContext);
-        router.addServer(layoutServer);
+        newRouter.registerServer(layoutServer);
         logUnitServer = new LogUnitServer(serverContext);
-        router.addServer(logUnitServer);
+        newRouter.registerServer(logUnitServer);
         managementServer = new ManagementServer(serverContext);
-        router.addServer(managementServer);
-        router.baseServer.setOptionsMap(opts);
+        newRouter.registerServer(managementServer);
 
-        // Create the event loops responsible for servicing inbound messages.
-        EventLoopGroup bossGroup;
-        EventLoopGroup workerGroup;
-        EventExecutorGroup ee;
-
-        bossGroup = new NioEventLoopGroup(1, new ThreadFactory() {
-            final AtomicInteger threadNum = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("accept-" + threadNum.getAndIncrement());
-                return t;
-            }
-        });
-
-        workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2, new ThreadFactory() {
-            final AtomicInteger threadNum = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("io-" + threadNum.getAndIncrement());
-                return t;
-            }
-        });
-
-        ee = new DefaultEventExecutorGroup(Runtime.getRuntime().availableProcessors() * 2, new ThreadFactory() {
-
-            final AtomicInteger threadNum = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("event-" + threadNum.getAndIncrement());
-                return t;
-            }
-        });
-
-
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 100)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childOption(ChannelOption.SO_REUSEADDR, true)
-                    .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(io.netty.channel.socket.SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new LengthFieldPrepender(4));
-                            ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                            ch.pipeline().addLast(ee, new NettyCorfuMessageDecoder());
-                            ch.pipeline().addLast(ee, new NettyCorfuMessageEncoder());
-                            ch.pipeline().addLast(ee, router);
-                        }
-                    });
-            ChannelFuture f = b.bind(port).sync();
-            while (true) {
-                try {
-                    f.channel().closeFuture().sync();
-                } catch (InterruptedException ie) {
-                }
-            }
-
-        } catch (InterruptedException ie) {
-
-        } catch (Exception ex) {
-            log.error("Corfu server shut down unexpectedly due to exception", ex);
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
+        newRouter.start();
 
     }
 }

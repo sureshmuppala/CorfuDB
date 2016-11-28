@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.corfudb.protocols.wireprotocol.*;
 import org.corfudb.protocols.wireprotocol.CorfuMsgType;
+import org.corfudb.router.IServer;
+import org.corfudb.router.ServerMsgHandler;
 import org.corfudb.util.Utils;
 
 import java.io.File;
@@ -35,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by mwei on 12/8/15.
  */
 @Slf4j
-public class SequencerServer extends AbstractServer {
+public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     /**
      * A scheduler, which is used to schedule checkpoints and lease renewal
@@ -62,10 +64,11 @@ public class SequencerServer extends AbstractServer {
      */
     private Map<String, Object> opts;
 
-    /** Handler for this server */
+    /** Handler for the base server */
     @Getter
-    private CorfuMsgHandler handler = new CorfuMsgHandler()
-            .generateHandlers(MethodHandles.lookup(), this);
+    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
+            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+                    .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
 
     /**
      * map from stream-trails to global-log tails. used for backpointers.
@@ -286,7 +289,6 @@ public class SequencerServer extends AbstractServer {
                         requestStreamTokens.build())));
     }
 
-    @Override
     public void reset() {
         if (fc != null) {
             synchronized (fcLock) {
@@ -302,7 +304,6 @@ public class SequencerServer extends AbstractServer {
         reboot();
     }
 
-    @Override
     public synchronized void reboot() {
             streamTailToGlobalTailMap = new ConcurrentHashMap<>();
             streamTailMap = new ConcurrentHashMap<>();
@@ -332,7 +333,6 @@ public class SequencerServer extends AbstractServer {
     /**
      * Shutdown the server.
      */
-    @Override
     public void shutdown() {
         try {
             scheduler.shutdownNow();

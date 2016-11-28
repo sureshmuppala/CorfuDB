@@ -12,6 +12,8 @@
         <module>format</module>
         <module>cmdlets</module>
         <module>test</module>
+        <module>router</module>
+        <module>test-infrastructure</module>
     </modules>
 
     <packaging>pom</packaging>

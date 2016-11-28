@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.corfudb.protocols.wireprotocol.*;
+import org.corfudb.router.IServer;
+import org.corfudb.router.ServerMsgHandler;
 import org.corfudb.util.Utils;
 
 import java.lang.invoke.MethodHandles;
@@ -15,7 +17,7 @@ import java.util.Map;
  * Created by mwei on 12/8/15.
  */
 @Slf4j
-public class BaseServer extends AbstractServer {
+public class BaseServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     /** Options map, if available */
     @Getter
@@ -24,8 +26,9 @@ public class BaseServer extends AbstractServer {
 
     /** Handler for the base server */
     @Getter
-    private final CorfuMsgHandler handler = new CorfuMsgHandler()
-            .generateHandlers(MethodHandles.lookup(), this);
+    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
+            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+            .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
 
     /** Respond to a ping message.
      *
@@ -65,10 +68,4 @@ public class BaseServer extends AbstractServer {
         Utils.sleepUninterruptibly(500); // Sleep, to make sure that all channels are flushed...
         System.exit(100);
     }
-
-    @Override
-    public void reset() { }
-
-    @Override
-    public void reboot() { }
 }

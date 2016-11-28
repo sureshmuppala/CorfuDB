@@ -49,6 +49,8 @@ import org.corfudb.protocols.wireprotocol.ReadResponse;
 import org.corfudb.protocols.wireprotocol.TrimRequest;
 import org.corfudb.protocols.wireprotocol.WriteMode;
 import org.corfudb.protocols.wireprotocol.WriteRequest;
+import org.corfudb.router.IServer;
+import org.corfudb.router.ServerMsgHandler;
 import org.corfudb.runtime.exceptions.DataCorruptionException;
 import org.corfudb.runtime.exceptions.OverwriteException;
 import org.corfudb.util.Utils;
@@ -69,7 +71,7 @@ import org.corfudb.util.retry.IntervalAndSentinelRetry;
  * flag is set in the flags field.
  */
 @Slf4j
-public class LogUnitServer extends AbstractServer {
+public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     private ServerContext serverContext;
 
@@ -90,8 +92,10 @@ public class LogUnitServer extends AbstractServer {
 
     /** Handler for the base server */
     @Getter
-    private CorfuMsgHandler handler = new CorfuMsgHandler()
-                                            .generateHandlers(MethodHandles.lookup(), this);
+    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
+            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+                    .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
+
 
     /**
      * Service an incoming write request.
@@ -271,7 +275,7 @@ public class LogUnitServer extends AbstractServer {
         gcThread.start();
     }
 
-    @Override
+
     public void reset() {
         String d = serverContext.getDataStore().getLogDir();
         localLog.close();
@@ -293,7 +297,6 @@ public class LogUnitServer extends AbstractServer {
         reboot();
     }
 
-    @Override
     public void reboot() {
         if ((Boolean) opts.get("--memory")) {
             log.warn("Log unit opened in-memory mode (Maximum size={}). " +
@@ -432,7 +435,6 @@ public class LogUnitServer extends AbstractServer {
     /**
      * Shutdown the server.
      */
-    @Override
     public void shutdown() {
         scheduler.shutdownNow();
         dataCache.invalidateAll(); //should evict all entries

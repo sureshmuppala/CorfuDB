@@ -45,7 +45,7 @@ public class NettyServerRouter extends ChannelInboundHandlerAdapter
     public NettyServerRouter(Map<String, Object> opts) {
         handlerMap = new ConcurrentHashMap<>();
         baseServer = new BaseServer();
-        addServer(baseServer);
+   //     addServer(baseServer);
     }
 
     /**

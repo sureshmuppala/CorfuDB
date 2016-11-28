@@ -82,7 +82,6 @@ public class NettyCommTest extends AbstractCorfuTest {
             throws Exception {
 
         NettyServerRouter nsr = new NettyServerRouter(new ImmutableMap.Builder<String, Object>().build());
-        nsr.addServer(new BaseServer());
         int port = findRandomOpenPort();
 
         NettyServerData d = new NettyServerData(port);
