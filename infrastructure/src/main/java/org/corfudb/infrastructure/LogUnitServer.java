@@ -224,6 +224,8 @@ public class LogUnitServer extends AbstractServer {
 
     private StreamLog streamLog;
 
+    private BatchWriter<LogAddress, LogData> batchWriter;
+
     public LogUnitServer(ServerContext serverContext) {
         this.opts = serverContext.getServerConfig();
         this.serverContext = serverContext;
@@ -286,21 +288,18 @@ public class LogUnitServer extends AbstractServer {
                     .map(m -> m.getData().release());
         }
 
+        if(batchWriter != null) {
+            batchWriter.close();
+        }
+
+        batchWriter = new BatchWriter(streamLog);
+
         dataCache = Caffeine.<LogAddress,LogData>newBuilder()
                 .<LogAddress,LogData>weigher((k, v) -> v.getData() == null ? 1 : v.getData().readableBytes())
                 .maximumWeight(maxCacheSize)
                 .removalListener(this::handleEviction)
-                .writer(new CacheWriter<LogAddress, LogData>() {
-                    @Override
-                    public void write(@Nonnull LogAddress address, @Nonnull LogData entry) {
-                            streamLog.append(address, entry);
-                    }
-
-                    @Override
-                    public void delete(LogAddress aLong, LogData logUnitEntry, RemovalCause removalCause) {
-                        // never need to delete
-                    }
-                }).<LogAddress,LogData>build(this::handleRetrieval);
+                .writer(batchWriter)
+                .build(this::handleRetrieval);
 
         // Trim map is set to empty on start
         // TODO: persist trim map - this is optional since trim is just a hint.
@@ -400,6 +399,7 @@ public class LogUnitServer extends AbstractServer {
     public void shutdown() {
         scheduler.shutdownNow();
         dataCache.invalidateAll(); //should evict all entries
+        batchWriter.close();
     }
 
     @VisibleForTesting
