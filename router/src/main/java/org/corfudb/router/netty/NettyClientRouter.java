@@ -401,6 +401,7 @@ public class NettyClientRouter<M extends IRoutableMsg<T> & IRespondableMsg, T ex
 
         /** The currently registered channel handler context. */
         ChannelHandlerContext context;
+        IChannel<M> channel;
 
         /**
          * Read a message in the channel
@@ -429,7 +430,7 @@ public class NettyClientRouter<M extends IRoutableMsg<T> & IRespondableMsg, T ex
             } else {
                 final IClient<M, T> client = handlerMap.get(message.getMsgType());
                 if (client != null) {
-                    client.handleMessage(message, channelHandlerContext);
+                    client.handleMessage(message, channel);
                 }
             }
         }
@@ -467,6 +468,7 @@ public class NettyClientRouter<M extends IRoutableMsg<T> & IRespondableMsg, T ex
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             super.channelActive(ctx);
             context = ctx;
+            channel = new NettyChannelWrapper<M>(ctx);
             log.debug("Channel {} active", ctx);
             if (queueMessagesOnFailure && queuedMessages.size() > 0) {
                 log.info("Resending {} queued messages", queuedMessages.size());

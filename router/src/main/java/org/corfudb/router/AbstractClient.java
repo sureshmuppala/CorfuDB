@@ -35,11 +35,11 @@ public abstract class AbstractClient<M extends IRoutableMsg<T>, T> implements IC
     /**
      * Handle a incoming message on the channel
      *
-     * @param msg The incoming message
-     * @param ctx The channel handler context
+     * @param msg     The incoming message
+     * @param channel The channel
      */
-    public void handleMessage(M msg, ChannelHandlerContext ctx) {
-        getMsgHandler().handle(msg, ctx);
+    public void handleMessage(M msg, IChannel<M> channel) {
+        getMsgHandler().handle(msg, channel);
     }
 
     /**

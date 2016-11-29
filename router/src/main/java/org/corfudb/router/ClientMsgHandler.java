@@ -20,11 +20,11 @@ import java.util.function.Function;
 public class ClientMsgHandler<M extends IRoutableMsg<T>, T> {
 
     public interface Handler<M> {
-        M handle(M CorfuMsg, ChannelHandlerContext ctx);
+        M handle(M CorfuMsg, IChannel<M> channel);
     }
 
     public interface VoidHandler<M> {
-        void handle(M msg, ChannelHandlerContext ctx);
+        void handle(M msg, IChannel<M> channel);
     }
 
     /** The handler map. */
@@ -54,14 +54,14 @@ public class ClientMsgHandler<M extends IRoutableMsg<T>, T> {
     /** Handle an incoming message.
      *
      * @param message   The message to handle.
-     * @param ctx       The channel handler context.
+     * @param channel   The channel handler context.
      * @return          True, if the message was handled.
      *                  False otherwise.
      */
     @SuppressWarnings("unchecked")
-    public boolean handle(M message, ChannelHandlerContext ctx) {
+    public boolean handle(M message, IChannel<M> channel) {
         if (handlerMap.containsKey(message.getMsgType())) {
-            handlerMap.get(message.getMsgType()).handle(message, ctx);
+            handlerMap.get(message.getMsgType()).handle(message, channel);
             return true;
         }
         return false;
@@ -92,7 +92,7 @@ public class ClientMsgHandler<M extends IRoutableMsg<T>, T> {
                                         "handle", MethodType.methodType(VoidHandler.class),
                                         mt, mh, mh.type())
                                         .getTarget().invokeExact();
-                                handlerMap.put(type, (M msg, ChannelHandlerContext ctx) -> {
+                                handlerMap.put(type, (M msg, IChannel<M> ctx) -> {
                                     vh.handle(msg, ctx);
                                     return null;
                                 });
@@ -113,7 +113,7 @@ public class ClientMsgHandler<M extends IRoutableMsg<T>, T> {
                                         "handle", MethodType.methodType(VoidHandler.class, o.getClass()),
                                         mtGeneric.dropParameterTypes(0,1), mh, mh.type().dropParameterTypes(0,1))
                                         .getTarget().bindTo(o).invoke();
-                                handlerMap.put(type, (M msg, ChannelHandlerContext ctx) -> {
+                                handlerMap.put(type, (M msg, IChannel<M> ctx) -> {
                                     vh.handle(msg, ctx);
                                     return null;
                                 });

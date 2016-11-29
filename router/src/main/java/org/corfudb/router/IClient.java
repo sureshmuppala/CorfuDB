@@ -13,9 +13,9 @@ public interface IClient<M extends IRoutableMsg<T>, T> {
      * Handle a incoming message on the channel
      *
      * @param msg The incoming message
-     * @param ctx The channel handler context
+     * @param channel The channel
      */
-    void handleMessage(M msg, ChannelHandlerContext ctx);
+    void handleMessage(M msg, IChannel<M> channel);
 
     /**
      * Returns a set of message types that the client handles.
