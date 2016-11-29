@@ -4,7 +4,6 @@ import lombok.Data;
 import lombok.Getter;
 import org.corfudb.AbstractCorfuTest;
 import org.corfudb.infrastructure.BaseServer;
-import org.corfudb.infrastructure.IServerRouter;
 import org.corfudb.infrastructure.LayoutServer;
 import org.corfudb.infrastructure.LogUnitServer;
 import org.corfudb.infrastructure.ManagementServer;

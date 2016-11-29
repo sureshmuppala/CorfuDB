@@ -4,8 +4,11 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.corfudb.protocols.wireprotocol.CorfuMsg;
+import org.corfudb.protocols.wireprotocol.CorfuMsgType;
 import org.corfudb.protocols.wireprotocol.NettyCorfuMessageDecoder;
 import org.corfudb.protocols.wireprotocol.NettyCorfuMessageEncoder;
+import org.corfudb.router.netty.NettyServerRouter;
 import org.corfudb.util.GitRepositoryState;
 import org.corfudb.util.Version;
 import org.docopt.Docopt;
@@ -154,27 +157,22 @@ public class CorfuServer {
         }
 
         // Now, we start the Netty router, and have it route to the correct port.
-        NettyServerRouter router = new NettyServerRouter(opts);
-        org.corfudb.router.netty.NettyServerRouter newRouter =
-                new org.corfudb.router.netty.NettyServerRouter<>((int)opts.get("<port>"),
-                        new NettyCorfuMessageDecoder(), new NettyCorfuMessageEncoder());
+        NettyServerRouter<CorfuMsg, CorfuMsgType> router =
+                NettyServerRouter.<CorfuMsg, CorfuMsgType>builder()
+                    .setPort((int)opts.get("<port>"))
+                    .setEncoderSupplier(NettyCorfuMessageEncoder::new)
+                    .setDecoderSupplier(NettyCorfuMessageDecoder::new)
+                    .build();
+
         // Create a common Server Context for all servers to access.
-        ServerContext serverContext = new ServerContext(opts, router);
+        ServerContext serverContext = new ServerContext(opts);
 
-        BaseServer bs = new BaseServer();
-        bs.setOptionsMap(opts);
-        newRouter.registerServer(bs);
-        // Add each role to the router.
-        sequencerServer = new SequencerServer(serverContext);
-        newRouter.registerServer(sequencerServer);
-        layoutServer = new LayoutServer(serverContext);
-        newRouter.registerServer(layoutServer);
-        logUnitServer = new LogUnitServer(serverContext);
-        newRouter.registerServer(logUnitServer);
-        managementServer = new ManagementServer(serverContext);
-        newRouter.registerServer(managementServer);
-
-        newRouter.start();
+        router.registerServer(BaseServer::new)
+              .registerServer(r -> new LayoutServer(r, serverContext))
+              .registerServer(r -> new ManagementServer(r, serverContext))
+              .registerServer(r -> new SequencerServer(r, serverContext))
+              .registerServer(r -> new LogUnitServer(r, serverContext))
+              .start();
 
     }
 }

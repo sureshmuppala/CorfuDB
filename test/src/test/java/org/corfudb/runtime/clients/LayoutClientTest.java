@@ -1,7 +1,6 @@
 package org.corfudb.runtime.clients;
 
 import com.google.common.collect.ImmutableSet;
-import org.corfudb.infrastructure.AbstractServer;
 import org.corfudb.infrastructure.LayoutServer;
 import org.corfudb.infrastructure.TestLayoutBuilder;
 import org.corfudb.runtime.exceptions.AlreadyBootstrappedException;

@@ -1,6 +1,5 @@
 package org.corfudb.runtime.clients;
 
-import org.corfudb.infrastructure.IServerRouter;
 import org.corfudb.protocols.wireprotocol.CorfuMsg;
 
 import java.util.concurrent.atomic.AtomicInteger;

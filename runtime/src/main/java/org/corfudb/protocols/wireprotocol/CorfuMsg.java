@@ -3,6 +3,7 @@ package org.corfudb.protocols.wireprotocol;
 import com.google.common.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
 import lombok.*;
+import org.corfudb.router.IRespondableMsg;
 import org.corfudb.router.IRoutableMsg;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CorfuMsg implements IRoutableMsg<CorfuMsgType> {
+public class CorfuMsg implements IRoutableMsg<CorfuMsgType>, IRespondableMsg {
 
     /**
      * Marker field value, should equal 0xC0FC0FC0

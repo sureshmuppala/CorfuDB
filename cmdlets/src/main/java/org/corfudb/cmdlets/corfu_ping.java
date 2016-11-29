@@ -87,7 +87,7 @@ public class corfu_ping implements ICmdlet {
                     log.trace("Ping[{}] ended at {}", seqNo, end);
                     long duration = end - start;
                     String ms = String.format("%.3f", (float) duration / 1000000L);
-                    System.out.println(ansi().a("PONG from ").fg(WHITE).a(host + ":" + port).reset()
+                    System.out.println(ansi().a("PONG_RESPONSE from ").fg(WHITE).a(host + ":" + port).reset()
                             .a(": seq=" + seqNo + " time=" + ms + "ms"));
                 });
             });

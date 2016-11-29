@@ -19,6 +19,38 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
+        <!-- external dependencies -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.1.0.2</version>
+                <executions>
+                    <execution>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <protocVersion>3.1.0</protocVersion>
+                            <inputDirectories>
+                                <include>src/main/protobuf</include>
+                                <include>src/test/protobuf</include>
+                            </inputDirectories>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

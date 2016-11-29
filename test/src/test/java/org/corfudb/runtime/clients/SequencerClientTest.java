@@ -1,7 +1,6 @@
 package org.corfudb.runtime.clients;
 
 import com.google.common.collect.ImmutableSet;
-import org.corfudb.infrastructure.AbstractServer;
 import org.corfudb.infrastructure.SequencerServer;
 import org.junit.Test;
 

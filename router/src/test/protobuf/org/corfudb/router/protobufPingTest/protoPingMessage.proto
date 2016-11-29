@@ -1,0 +1,16 @@
+package protobufPingTest;
+
+option java_package = "org.corfudb.router.protobufPingTest";
+option java_outer_classname = "protoPingMessage";
+
+message PingMessage {
+
+    enum PingMessageType {
+        PING = 0;
+        PONG = 1;
+    }
+
+    required PingMessageType msgType = 1;
+    required int64 requestID = 2;
+
+}

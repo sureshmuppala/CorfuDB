@@ -3,7 +3,6 @@ package org.corfudb.infrastructure;
 import org.assertj.core.api.Assertions;
 import org.corfudb.protocols.wireprotocol.CorfuMsg;
 import org.corfudb.protocols.wireprotocol.CorfuMsgType;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +26,7 @@ public class BaseServerTest extends AbstractServerTest {
     public void testPing() {
         sendMessage(new CorfuMsg(CorfuMsgType.PING));
         Assertions.assertThat(getLastMessage().getMsgType())
-                .isEqualTo(CorfuMsgType.PONG);
+                .isEqualTo(CorfuMsgType.PONG_RESPONSE);
     }
 
     @Test

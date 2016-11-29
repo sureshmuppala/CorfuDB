@@ -3,7 +3,6 @@ package org.corfudb.runtime.clients;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
-import org.corfudb.infrastructure.AbstractServer;
 import org.corfudb.infrastructure.LogUnitServer;
 import org.corfudb.infrastructure.ServerContext;
 import org.corfudb.infrastructure.ServerContextBuilder;

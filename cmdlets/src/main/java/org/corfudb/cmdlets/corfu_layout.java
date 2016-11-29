@@ -155,7 +155,7 @@ public class corfu_layout implements ICmdlet {
                     router.getClient(ManagementClient.class).bootstrapManagement(l).get();
                     return cmdlet.ok();
                 } else {
-                    return cmdlet.err("NACK");
+                    return cmdlet.err("NACK_ERROR");
                 }
             } catch (ExecutionException ex) {
                 return cmdlet.err("Exception bootstrapping layout", ex.getCause().toString());
@@ -169,10 +169,10 @@ public class corfu_layout implements ICmdlet {
             try {
                 if (router.getClient(LayoutClient.class).prepare(l.getEpoch(), rank).get() != null) {
                     System.out.println(ansi().a("RESPONSE from ").fg(WHITE).a(host + ":" + port)
-                            .reset().fg(GREEN).a(": ACK"));
+                            .reset().fg(GREEN).a(": ACK_RESPONSE"));
                     return cmdlet.ok();
                 } else {
-                    return cmdlet.err("ACK");
+                    return cmdlet.err("ACK_RESPONSE");
                 }
             } catch (ExecutionException ex) {
                 if (ex.getCause().getClass() == OutrankedException.class) {
@@ -203,7 +203,7 @@ public class corfu_layout implements ICmdlet {
                 if (router.getClient(LayoutClient.class).propose(l.getEpoch(), rank, l).get()) {
                     return cmdlet.ok();
                 } else {
-                    return cmdlet.err("NACK");
+                    return cmdlet.err("NACK_ERROR");
                 }
             } catch (ExecutionException ex) {
                 if (ex.getCause().getClass() == OutrankedException.class) {
@@ -236,7 +236,7 @@ public class corfu_layout implements ICmdlet {
                 if (router.getClient(LayoutClient.class).committed(l.getEpoch(), l).get()) {
                     return cmdlet.ok();
                 } else {
-                    return cmdlet.err("NACK");
+                    return cmdlet.err("NACK_ERROR");
                 }
             } catch (ExecutionException ex) {
                 if (ex.getCause().getClass() == WrongEpochException.class) {

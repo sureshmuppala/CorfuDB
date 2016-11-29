@@ -2,7 +2,6 @@ package org.corfudb.runtime.clients;
 
 import lombok.Getter;
 import org.corfudb.AbstractCorfuTest;
-import org.corfudb.infrastructure.AbstractServer;
 import org.corfudb.infrastructure.ServerContext;
 import org.corfudb.infrastructure.ServerContextBuilder;
 import org.corfudb.infrastructure.TestServerRouter;

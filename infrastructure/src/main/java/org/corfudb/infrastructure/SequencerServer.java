@@ -7,8 +7,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.corfudb.protocols.wireprotocol.*;
 import org.corfudb.protocols.wireprotocol.CorfuMsgType;
-import org.corfudb.router.IServer;
-import org.corfudb.router.ServerMsgHandler;
+import org.corfudb.router.*;
 import org.corfudb.util.Utils;
 
 import java.io.File;
@@ -32,12 +31,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>
  * It currently supports a single operation, which is a incoming request:
  * <p>
- * TOKEN_REQ - Request the next token.
+ * TOKEN_REQUEST - Request the next token.
  * <p>
  * Created by mwei on 12/8/15.
  */
 @Slf4j
-public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
+public class SequencerServer extends AbstractEpochedServer {
 
     /**
      * A scheduler, which is used to schedule checkpoints and lease renewal
@@ -49,8 +48,7 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
                             .setDaemon(true)
                             .setNameFormat("Seq-Checkpoint-%d")
                             .build());
-    @Getter
-    long epoch;
+
     AtomicLong globalLogTail;
 
     /**
@@ -66,8 +64,8 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     /** Handler for the base server */
     @Getter
-    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
-            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+    private final PreconditionServerMsgHandler<CorfuMsg, CorfuMsgType> preconditionMsgHandler =
+            new PreconditionServerMsgHandler<CorfuMsg, CorfuMsgType>(this)
                     .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
 
     /**
@@ -80,7 +78,10 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
      */
     ConcurrentHashMap<UUID, Long> streamTailMap;
 
-    public SequencerServer(ServerContext serverContext) {
+    public SequencerServer(
+            IServerRouter<CorfuMsg, CorfuMsgType> router,
+            ServerContext serverContext) {
+        super(router, serverContext);
         Map<String, Object> opts = serverContext.getServerConfig();
         streamTailToGlobalTailMap = new ConcurrentHashMap<>();
         streamTailMap = new ConcurrentHashMap<>();
@@ -202,14 +203,14 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
 
         // If no streams are specified in the request, this value returns the last global token issued.
         long responseGlobalTail = (req.getStreams().size() == 0) ? globalLogTail.get() - 1 : maxStreamGlobalTails;
-        r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RES.payloadMsg(
+        r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RESPONSE.payloadMsg(
                 new TokenResponse(responseGlobalTail, Collections.emptyMap(), responseStreamTails.build())));
     }
 
     /**
      * Service an incoming token request.
      */
-    @ServerHandler(type=CorfuMsgType.TOKEN_REQ)
+    @ServerHandler(type=CorfuMsgType.TOKEN_REQUEST)
     public synchronized void tokenRequest(CorfuPayloadMsg<TokenRequest> msg,
                                           ChannelHandlerContext ctx, IServerRouter r) {
         TokenRequest req = msg.getPayload();
@@ -223,7 +224,7 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
 
         // if no streams, simply allocate a position at the tail of the global log
         if (req.getStreams() == null) {
-            r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RES.payloadMsg(
+            r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RESPONSE.payloadMsg(
                     new TokenResponse(globalLogTail.getAndAdd(req.getNumTokens()), Collections.emptyMap(), Collections.emptyMap())));
             return;
         }
@@ -232,7 +233,7 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
         if (req.getTxnResolution()) {
             if (!txnResolution(req.getReadTimestamp(), req.getReadSet())) {
                 // If the txn aborts, then DO NOT hand out a token.
-                r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RES.payloadMsg(
+                r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RESPONSE.payloadMsg(
                         new TokenResponse(-1L, Collections.emptyMap(), Collections.emptyMap())));
                 return;
             }
@@ -283,7 +284,7 @@ public class SequencerServer implements IServer<CorfuMsg, CorfuMsgType> {
             }
         }
 
-        r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RES.payloadMsg(
+        r.sendResponse(ctx, msg, CorfuMsgType.TOKEN_RESPONSE.payloadMsg(
                 new TokenResponse(currentTail,
                         backPointerMap.build(),
                         requestStreamTokens.build())));

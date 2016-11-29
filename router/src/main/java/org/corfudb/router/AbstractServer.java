@@ -1,5 +1,6 @@
 package org.corfudb.router;
 
+import io.netty.channel.ChannelHandlerContext;
 import lombok.Getter;
 
 /**
@@ -16,4 +17,11 @@ public abstract class AbstractServer<M extends IRoutableMsg<T>, T> implements IS
         this.router = router;
     }
 
+    public void sendMessage(ChannelHandlerContext ctx, M msg) {
+        router.sendMessage(ctx, msg);
+    }
+
+    public void sendResponse(ChannelHandlerContext ctx, IRespondableMsg inMsg, IRespondableMsg outMsg) {
+        router.sendResponse(ctx, inMsg, outMsg);
+    }
 }

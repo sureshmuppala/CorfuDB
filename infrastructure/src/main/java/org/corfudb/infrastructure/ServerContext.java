@@ -31,16 +31,12 @@ public class ServerContext {
     private DataStore dataStore;
 
     @Getter
-    private IServerRouter serverRouter;
-
-    @Getter
     @Setter
     private IFailureDetectorPolicy failureDetectorPolicy;
 
-    public ServerContext(Map<String, Object> serverConfig, IServerRouter serverRouter) {
+    public ServerContext(Map<String, Object> serverConfig) {
         this.serverConfig = serverConfig;
         resetDataStore();
-        this.serverRouter = serverRouter;
         this.failureDetectorPolicy = new PeriodicPollPolicy();
     }
 
@@ -58,8 +54,5 @@ public class ServerContext {
 
     public synchronized void setServerEpoch(long serverEpoch) {
         dataStore.put(Long.class, PREFIX_EPOCH, KEY_EPOCH, serverEpoch);
-        // Set the epoch in the router as well.
-        //TODO need to figure out if we can remove this redundancy
-        serverRouter.setServerEpoch(serverEpoch);
     }
 }

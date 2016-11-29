@@ -1,15 +1,11 @@
 package org.corfudb.runtime.clients;
 
-import com.google.common.collect.ImmutableSet;
 import io.netty.channel.ChannelHandlerContext;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.corfudb.protocols.wireprotocol.*;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +29,7 @@ public class SequencerClient implements IClient {
     public ClientMsgHandler msgHandler = new ClientMsgHandler(this)
             .generateHandlers(MethodHandles.lookup(), this);
 
-    @ClientHandler(type=CorfuMsgType.TOKEN_RES)
+    @ClientHandler(type=CorfuMsgType.TOKEN_RESPONSE)
     private static Object handleTokenResponse(CorfuPayloadMsg<TokenResponse> msg,
                                                 ChannelHandlerContext ctx, IClientRouter r) {
         return msg.getPayload();
@@ -41,14 +37,14 @@ public class SequencerClient implements IClient {
 
     public CompletableFuture<TokenResponse> nextToken(Set<UUID> streamIDs, long numTokens) {
         return router.sendMessageAndGetCompletable(
-                CorfuMsgType.TOKEN_REQ.payloadMsg(new TokenRequest(numTokens, streamIDs, false, false)));
+                CorfuMsgType.TOKEN_REQUEST.payloadMsg(new TokenRequest(numTokens, streamIDs, false, false)));
     }
 
     public CompletableFuture<TokenResponse> nextToken(Set<UUID> streamIDs, long numTokens,
                                                       boolean overwrite,
                                                       boolean replexOverwrite) {
         return router.sendMessageAndGetCompletable(
-                CorfuMsgType.TOKEN_REQ.payloadMsg(new TokenRequest(numTokens, streamIDs, overwrite, replexOverwrite)));
+                CorfuMsgType.TOKEN_REQUEST.payloadMsg(new TokenRequest(numTokens, streamIDs, overwrite, replexOverwrite)));
     }
 
     public CompletableFuture<TokenResponse> nextToken(Set<UUID> streamIDs, long numTokens,
@@ -58,7 +54,7 @@ public class SequencerClient implements IClient {
                                                       long readTimestamp,
                                                       Set<UUID> readSet) {
         return router.sendMessageAndGetCompletable(
-                CorfuMsgType.TOKEN_REQ.payloadMsg(new TokenRequest(numTokens, streamIDs, overwrite, replexOverwrite,
+                CorfuMsgType.TOKEN_REQUEST.payloadMsg(new TokenRequest(numTokens, streamIDs, overwrite, replexOverwrite,
                         txnResolution, readTimestamp, readSet)));
     }
 }

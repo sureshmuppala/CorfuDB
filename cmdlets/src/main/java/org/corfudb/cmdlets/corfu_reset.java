@@ -52,10 +52,10 @@ public class corfu_reset implements ICmdlet {
         System.out.println(ansi().a("RESET ").fg(WHITE).a(host + ":" + port).reset().a(":"));
         try {
             if (router.getClient(BaseClient.class).reset().get()) {
-                return cmdlet.ok("ACK");
+                return cmdlet.ok("ACK_RESPONSE");
             }
             else {
-                return cmdlet.err("NACK");
+                return cmdlet.err("NACK_ERROR");
             }
         } catch (Exception ex) {
             return cmdlet.err("Exception", ex.toString(), ex.getCause().toString());

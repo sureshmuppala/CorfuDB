@@ -1,9 +1,7 @@
 package org.corfudb.runtime.clients;
 
 import com.google.common.collect.ImmutableSet;
-import org.corfudb.infrastructure.AbstractServer;
 import org.corfudb.infrastructure.BaseServer;
-import org.corfudb.infrastructure.LogUnitServer;
 import org.corfudb.util.CFUtils;
 import org.junit.Test;
 

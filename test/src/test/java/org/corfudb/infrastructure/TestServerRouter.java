@@ -13,7 +13,6 @@ import org.corfudb.runtime.clients.TestChannelContext;
 import org.corfudb.runtime.clients.TestRule;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,7 +89,7 @@ public class TestServerRouter implements IServerRouter {
 
 
     /**
-     * Validate the epoch of a CorfuMsg, and send a WRONG_EPOCH response if
+     * Validate the epoch of a CorfuMsg, and send a WRONG_EPOCH_ERROR response if
      * the server is in the wrong epoch. Ignored if the message type is reset (which
      * is valid in any epoch).
      *
@@ -100,7 +99,7 @@ public class TestServerRouter implements IServerRouter {
      */
     public boolean validateEpoch(CorfuMsg msg, ChannelHandlerContext ctx) {
         if (!msg.getMsgType().ignoreEpoch && msg.getEpoch() != serverEpoch) {
-            sendResponse(ctx, msg, new CorfuPayloadMsg<>(CorfuMsgType.WRONG_EPOCH,
+            sendResponse(ctx, msg, new CorfuPayloadMsg<>(CorfuMsgType.WRONG_EPOCH_ERROR,
                     getServerEpoch()));
             log.trace("Incoming message with wrong epoch, got {}, expected {}, message was: {}",
                     msg.getEpoch(), serverEpoch, msg);

@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * This is a base client which processes basic messages.
- * It mainly handles PINGs, as well as the ACK/NACKs defined by
+ * It mainly handles PINGs, as well as the ACK_RESPONSE/NACKs defined by
  * the Corfu protocol.
  * <p>
  * Created by mwei on 12/9/15.
@@ -92,7 +92,7 @@ public class BaseClient implements IClient {
      */
     @ClientHandler(type=CorfuMsgType.PING)
     private static Object handlePing(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r) {
-        r.sendResponseToServer(ctx, msg, new CorfuMsg(CorfuMsgType.PONG));
+        r.sendResponseToServer(ctx, msg, new CorfuMsg(CorfuMsgType.PONG_RESPONSE));
         return null;
     }
 
@@ -103,43 +103,43 @@ public class BaseClient implements IClient {
      * @param r     A reference to the router
      * @return      Always True, since the ping message was successful.
      */
-    @ClientHandler(type=CorfuMsgType.PONG)
+    @ClientHandler(type=CorfuMsgType.PONG_RESPONSE)
     private static Object handlePong(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r) {
         return true;
     }
 
-    /** Handle an ACK response from the server.
+    /** Handle an ACK_RESPONSE response from the server.
      *
      * @param msg   The ping request message
      * @param ctx   The context the message was sent under
      * @param r     A reference to the router
-     * @return      Always True, since the ACK message was successful.
+     * @return      Always True, since the ACK_RESPONSE message was successful.
      */
-    @ClientHandler(type=CorfuMsgType.ACK)
+    @ClientHandler(type=CorfuMsgType.ACK_RESPONSE)
     private static Object handleAck(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r) {
         return true;
     }
 
-    /** Handle a NACK response from the server.
+    /** Handle a NACK_ERROR response from the server.
      *
      * @param msg   The ping request message
      * @param ctx   The context the message was sent under
      * @param r     A reference to the router
-     * @return      Always True, since the ACK message was successful.
+     * @return      Always True, since the ACK_RESPONSE message was successful.
      */
-    @ClientHandler(type=CorfuMsgType.NACK)
+    @ClientHandler(type=CorfuMsgType.NACK_ERROR)
     private static Object handleNack(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r) {
         return false;
     }
 
-    /** Handle a WRONG_EPOCH response from the server.
+    /** Handle a WRONG_EPOCH_ERROR response from the server.
      *
      * @param msg   The wrong epoch message
      * @param ctx   The context the message was sent under
      * @param r     A reference to the router
      * @return      none, throw a wrong epoch exception instead.
      */
-    @ClientHandler(type=CorfuMsgType.WRONG_EPOCH)
+    @ClientHandler(type=CorfuMsgType.WRONG_EPOCH_ERROR)
     private static Object handleWrongEpoch(CorfuPayloadMsg<Long> msg, ChannelHandlerContext ctx, IClientRouter r) {
         throw new WrongEpochException(msg.getPayload());
     }

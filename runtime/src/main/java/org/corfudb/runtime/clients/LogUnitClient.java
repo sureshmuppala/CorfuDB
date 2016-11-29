@@ -1,7 +1,6 @@
 package org.corfudb.runtime.clients;
 
 import com.google.common.collect.Range;
-import com.google.common.collect.RangeSet;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,96 +37,96 @@ public class LogUnitClient implements IClient {
     public ClientMsgHandler msgHandler = new ClientMsgHandler(this)
             .generateHandlers(MethodHandles.lookup(), this);
 
-    /** Handle an WRITE_OK message.
+    /** Handle an WRITE_OK_RESPONSE message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @return      True, since this indicates success.
      */
-    @ClientHandler(type=CorfuMsgType.WRITE_OK)
+    @ClientHandler(type=CorfuMsgType.WRITE_OK_RESPONSE)
     private static Object handleOK(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r) {
         return true;
     }
 
-    /** Handle an ERROR_TRIMMED message.
+    /** Handle an TRIMMED_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws  Exception
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_TRIMMED)
+    @ClientHandler(type=CorfuMsgType.TRIMMED_ERROR)
     private static Object handleTrimmed(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
     throws Exception
     {
         throw new Exception("Trimmed");
     }
 
-    /** Handle an ERROR_OVERWRITE message.
+    /** Handle an OVERWRITE_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws      OverwriteException
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_OVERWRITE)
+    @ClientHandler(type=CorfuMsgType.OVERWRITE_ERROR)
     private static Object handleOverwrite(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
             throws Exception
     {
         throw new OverwriteException();
     }
 
-    /** Handle an ERROR_REPLEX_OVERWRITE message.
+    /** Handle an REPLEX_OVERWRITE_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws      OverwriteException
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_REPLEX_OVERWRITE)
+    @ClientHandler(type=CorfuMsgType.REPLEX_OVERWRITE_ERROR)
     private static Object handleReplexOverwrite(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
             throws Exception
     {
         throw new ReplexOverwriteException();
     }
 
-    /** Handle an ERROR_OOS message.
+    /** Handle an OOS_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws      OutOfSpaceException
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_OOS)
+    @ClientHandler(type=CorfuMsgType.OOS_ERROR)
     private static Object handleOOS(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
             throws Exception
     {
         throw new OutOfSpaceException();
     }
 
-    /** Handle an ERROR_RANK message.
+    /** Handle an RANK_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws      Exception
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_RANK)
+    @ClientHandler(type=CorfuMsgType.RANK_ERROR)
     private static Object handleOutranked(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
             throws Exception
     {
         throw new Exception("rank");
     }
 
-    /** Handle an ERROR_NOENTRY message.
+    /** Handle an NOENTRY_ERROR message.
      *
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      * @throws      Exception
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_NOENTRY)
+    @ClientHandler(type=CorfuMsgType.NOENTRY_ERROR)
     private static Object handleNoEntry(CorfuMsg msg, ChannelHandlerContext ctx, IClientRouter r)
             throws Exception
     {
@@ -147,12 +146,12 @@ public class LogUnitClient implements IClient {
     }
 
     /**
-     * Handle a ERROR_DATA_CORRUPTION message
+     * Handle a DATA_CORRUPTION_ERROR message
      * @param msg   Incoming Message
      * @param ctx   Context
      * @param r     Router
      */
-    @ClientHandler(type=CorfuMsgType.ERROR_DATA_CORRUPTION)
+    @ClientHandler(type=CorfuMsgType.DATA_CORRUPTION_ERROR)
     private static Object handleReadDataCorruption(CorfuPayloadMsg<ReadResponse> msg,
                                                    ChannelHandlerContext ctx, IClientRouter r)
     {

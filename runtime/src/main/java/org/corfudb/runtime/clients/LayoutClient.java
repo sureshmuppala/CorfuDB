@@ -34,11 +34,11 @@ public class LayoutClient implements IClient {
                     .add(CorfuMsgType.LAYOUT_RESPONSE)
                     .add(CorfuMsgType.LAYOUT_PREPARE)
                     .add(CorfuMsgType.LAYOUT_BOOTSTRAP)
-                    .add(CorfuMsgType.LAYOUT_NOBOOTSTRAP)
-                    .add(CorfuMsgType.LAYOUT_PREPARE_ACK)
-                    .add(CorfuMsgType.LAYOUT_PREPARE_REJECT)
-                    .add(CorfuMsgType.LAYOUT_PROPOSE_REJECT)
-                    .add(CorfuMsgType.LAYOUT_ALREADY_BOOTSTRAP)
+                    .add(CorfuMsgType.LAYOUT_NOBOOTSTRAP_ERROR)
+                    .add(CorfuMsgType.LAYOUT_PREPARE_ACK_RESPONSE)
+                    .add(CorfuMsgType.LAYOUT_PREPARE_REJECT_ERROR)
+                    .add(CorfuMsgType.LAYOUT_PROPOSE_REJECT_ERROR)
+                    .add(CorfuMsgType.LAYOUT_ALREADY_BOOTSTRAP_ERROR)
                     .build();
 
     @Setter
@@ -57,24 +57,24 @@ public class LayoutClient implements IClient {
             case LAYOUT_RESPONSE:
                 router.completeRequest(msg.getRequestID(), ((LayoutMsg) msg).getLayout());
                 break;
-            case LAYOUT_NOBOOTSTRAP:
+            case LAYOUT_NOBOOTSTRAP_ERROR:
                 router.completeExceptionally(msg.getRequestID(), new NoBootstrapException());
                 break;
-            case LAYOUT_PREPARE_ACK: {
+            case LAYOUT_PREPARE_ACK_RESPONSE: {
                 router.completeRequest(msg.getRequestID(), ((CorfuPayloadMsg<LayoutPrepareResponse>) msg).getPayload());
             }
                 break;
-            case LAYOUT_PREPARE_REJECT: {
+            case LAYOUT_PREPARE_REJECT_ERROR: {
                 LayoutPrepareResponse response = ((CorfuPayloadMsg<LayoutPrepareResponse>) msg).getPayload();
                 router.completeExceptionally(msg.getRequestID(), new OutrankedException(response.getRank(), response.getLayout()));
             }
                 break;
-            case LAYOUT_PROPOSE_REJECT: {
+            case LAYOUT_PROPOSE_REJECT_ERROR: {
                 LayoutProposeResponse response = ((CorfuPayloadMsg<LayoutProposeResponse>) msg).getPayload();
                 router.completeExceptionally(msg.getRequestID(), new OutrankedException(response.getRank()));
             }
                 break;
-            case LAYOUT_ALREADY_BOOTSTRAP:
+            case LAYOUT_ALREADY_BOOTSTRAP_ERROR:
                 router.completeExceptionally(msg.getRequestID(), new AlreadyBootstrappedException());
                 break;
         }
@@ -138,7 +138,7 @@ public class LayoutClient implements IClient {
      */
     public CompletableFuture<Boolean> committed(long epoch, Layout layout)
     {
-        return router.sendMessageAndGetCompletable(CorfuMsgType.LAYOUT_COMMITTED.payloadMsg(new LayoutCommittedRequest(epoch, layout)));
+        return router.sendMessageAndGetCompletable(CorfuMsgType.LAYOUT_COMMITTED_RESPONSE.payloadMsg(new LayoutCommittedRequest(epoch, layout)));
     }
 
 }

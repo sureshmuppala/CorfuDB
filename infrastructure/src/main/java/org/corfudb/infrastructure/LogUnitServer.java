@@ -50,6 +50,8 @@ import org.corfudb.protocols.wireprotocol.TrimRequest;
 import org.corfudb.protocols.wireprotocol.WriteMode;
 import org.corfudb.protocols.wireprotocol.WriteRequest;
 import org.corfudb.router.IServer;
+import org.corfudb.router.IServerRouter;
+import org.corfudb.router.PreconditionServerMsgHandler;
 import org.corfudb.router.ServerMsgHandler;
 import org.corfudb.runtime.exceptions.DataCorruptionException;
 import org.corfudb.runtime.exceptions.OverwriteException;
@@ -71,7 +73,7 @@ import org.corfudb.util.retry.IntervalAndSentinelRetry;
  * flag is set in the flags field.
  */
 @Slf4j
-public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
+public class LogUnitServer extends AbstractEpochedServer {
 
     private ServerContext serverContext;
 
@@ -92,8 +94,8 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
 
     /** Handler for the base server */
     @Getter
-    private final ServerMsgHandler<CorfuMsg, CorfuMsgType> handler =
-            new ServerMsgHandler<CorfuMsg, CorfuMsgType>()
+    private final PreconditionServerMsgHandler<CorfuMsg, CorfuMsgType> preconditionMsgHandler =
+            new PreconditionServerMsgHandler<CorfuMsg, CorfuMsgType>(this)
                     .generateHandlers(MethodHandles.lookup(), this, ServerHandler.class, ServerHandler::type);
 
 
@@ -109,20 +111,20 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
         try {
             if (msg.getPayload().getWriteMode() != WriteMode.REPLEX_STREAM) {
                 dataCache.put(new LogAddress(msg.getPayload().getGlobalAddress(), null), msg.getPayload().getData());
-                r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK.msg());
+                r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK_RESPONSE.msg());
                 return;
             } else {
                 for (UUID streamID : msg.getPayload().getStreamAddresses().keySet()) {
                     dataCache.put(new LogAddress(msg.getPayload().getStreamAddresses().get(streamID), streamID),
                             msg.getPayload().getData());
                 }
-                r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK.msg());
+                r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK_RESPONSE.msg());
             }
         } catch (OverwriteException ex) {
             if (msg.getPayload().getWriteMode() != WriteMode.REPLEX_STREAM)
-                r.sendResponse(ctx, msg, CorfuMsgType.ERROR_OVERWRITE.msg());
+                r.sendResponse(ctx, msg, CorfuMsgType.OVERWRITE_ERROR.msg());
             else
-                r.sendResponse(ctx, msg, CorfuMsgType.ERROR_REPLEX_OVERWRITE.msg());
+                r.sendResponse(ctx, msg, CorfuMsgType.REPLEX_OVERWRITE_ERROR.msg());
         }
     }
 
@@ -136,7 +138,7 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
             // Then this is a commit bit for the global log.
             LogData entry = dataCache.get(new LogAddress(msg.getPayload().getAddress(), null));
             if (entry == null) {
-                r.sendResponse(ctx, msg, CorfuMsgType.ERROR_NOENTRY.msg());
+                r.sendResponse(ctx, msg, CorfuMsgType.NOENTRY_ERROR.msg());
                 return;
             }
             else {
@@ -146,7 +148,7 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
             for (UUID streamID : msg.getPayload().getStreams().keySet()) {
                 LogData entry = dataCache.get(new LogAddress(streamAddresses.get(streamID), streamID));
                 if (entry == null) {
-                    r.sendResponse(ctx, msg, CorfuMsgType.ERROR_NOENTRY.msg());
+                    r.sendResponse(ctx, msg, CorfuMsgType.NOENTRY_ERROR.msg());
                     // TODO: Crap, we have to go back and undo all the commit bits??
                     return;
                 }
@@ -155,7 +157,7 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
                 }
             }
         }
-        r.sendResponse(ctx, msg, CorfuMsgType.ACK.msg());
+        r.sendResponse(ctx, msg, CorfuMsgType.ACK_RESPONSE.msg());
     }
 
     @ServerHandler(type=CorfuMsgType.READ_REQUEST)
@@ -176,30 +178,30 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
             }
             r.sendResponse(ctx, msg, CorfuMsgType.READ_RESPONSE.payloadMsg(rr));
         } catch (DataCorruptionException e) {
-            r.sendResponse(ctx, msg, CorfuMsgType.ERROR_DATA_CORRUPTION.msg());
+            r.sendResponse(ctx, msg, CorfuMsgType.DATA_CORRUPTION_ERROR.msg());
         }
     }
 
     @ServerHandler(type=CorfuMsgType.GC_INTERVAL)
     private void setGcInterval(CorfuPayloadMsg<Long> msg, ChannelHandlerContext ctx, IServerRouter r) {
         gcRetry.setRetryInterval(msg.getPayload());
-        r.sendResponse(ctx, msg, CorfuMsgType.ACK.msg());
+        r.sendResponse(ctx, msg, CorfuMsgType.ACK_RESPONSE.msg());
     }
 
     @ServerHandler(type=CorfuMsgType.FORCE_GC)
     private void forceGc(CorfuMsg msg, ChannelHandlerContext ctx, IServerRouter r) {
         gcThread.interrupt();
-        r.sendResponse(ctx, msg, CorfuMsgType.ACK.msg());
+        r.sendResponse(ctx, msg, CorfuMsgType.ACK_RESPONSE.msg());
     }
 
     @ServerHandler(type=CorfuMsgType.FILL_HOLE)
     private void fillHole(CorfuPayloadMsg<TrimRequest> msg, ChannelHandlerContext ctx, IServerRouter r) {
         try {
             dataCache.put(new LogAddress(msg.getPayload().getPrefix(), msg.getPayload().getStream()), LogData.HOLE);
-            r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK.msg());
+            r.sendResponse(ctx, msg, CorfuMsgType.WRITE_OK_RESPONSE.msg());
 
         } catch (OverwriteException e) {
-            r.sendResponse(ctx, msg, CorfuMsgType.ERROR_OVERWRITE.msg());
+            r.sendResponse(ctx, msg, CorfuMsgType.OVERWRITE_ERROR.msg());
         }
     }
 
@@ -207,7 +209,7 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
     private void trim(CorfuPayloadMsg<TrimRequest> msg, ChannelHandlerContext ctx, IServerRouter r) {
         trimMap.compute(msg.getPayload().getStream(), (key, prev) ->
                 prev == null ? msg.getPayload().getPrefix() : Math.max(prev, msg.getPayload().getPrefix()));
-        r.sendResponse(ctx, msg, CorfuMsgType.ACK.msg());
+        r.sendResponse(ctx, msg, CorfuMsgType.ACK_RESPONSE.msg());
     }
 
 
@@ -248,7 +250,9 @@ public class LogUnitServer implements IServer<CorfuMsg, CorfuMsgType> {
         }
     }
 
-    public LogUnitServer(ServerContext serverContext) {
+    public LogUnitServer(IServerRouter<CorfuMsg,CorfuMsgType> router,
+                         ServerContext serverContext) {
+        super(router, serverContext);
         this.opts = serverContext.getServerConfig();
         this.serverContext = serverContext;
 
